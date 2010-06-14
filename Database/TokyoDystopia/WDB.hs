@@ -121,7 +121,7 @@ put db k vs = do
   withForeignPtr (unTCList vs) (\v -> FW.c_put (unWDB db) (TCS.toInt64 k) v)
 
 -- | Put with specifying delimiter.
-put2 :: (Storable k) 
+put2 :: (Storable k)
      => WDB         -- ^ JDB database
      -> k           -- ^ Key for the record
      -> ByteString  -- ^ Value separated by delimiter
