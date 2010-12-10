@@ -40,7 +40,7 @@ import Data.ByteString ( ByteString )
 import Data.Int ( Int64 )
 import Foreign ( Ptr, maybePeek )
 import Database.TokyoCabinet.Storable ( Storable )
-import Database.TokyoCabinet ( ECODE(..) ) 
+import Database.TokyoCabinet ( ECODE(..) )
 import Database.TokyoDystopia.Internal ( bitOr )
 import Database.TokyoDystopia.Types
     ( OpenMode(..)
@@ -48,7 +48,6 @@ import Database.TokyoDystopia.Types
     , TuningOption(..) )
 
 import qualified Data.ByteString.Char8 as C8
-import qualified Foreign as FG
 import qualified Foreign.C.String as CS
 import qualified Database.TokyoCabinet.Error as TCE
 import qualified Database.TokyoCabinet.Storable as TCS
@@ -92,7 +91,7 @@ get db i = do
 
 -- | Search with GetMode options.
 search :: IDB -> String -> [GetMode] -> IO [Int64]
-search = I.mkSearch FI.c_search unIDB g 
+search = I.mkSearch FI.c_search unIDB g
       where
         g = bitOr . map (FI.unGetMode . f)
         f GMSUBSTR = FI.gmSubstr
@@ -117,7 +116,7 @@ ecode db = fmap TCE.cintToError (FI.c_ecode $ unIDB db)
 
 -- | Tune the database. Must be used before opening database.
 tune :: IDB -> Int64 -> Int64 -> Int64 -> [TuningOption] -> IO Bool
-tune db ernum etnum iusiz opts = 
+tune db ernum etnum iusiz opts =
     FI.c_tune (unIDB db) ernum etnum iusiz opts'
     where
       opts' = fromIntegral $ bitOr $ map (FI.unTuningOption . f) opts
@@ -154,9 +153,9 @@ optimize = FI.c_optimize . unIDB
 
 -- | Removes record with given key
 out :: (Storable k) => IDB -> k -> IO Bool
-out db key = FI.c_out (unIDB db) (TCS.toInt64 key) 
+out db key = FI.c_out (unIDB db) (TCS.toInt64 key)
 
--- | Delete the database from disk. 
+-- | Delete the database from disk.
 vanish :: IDB -> IO Bool
 vanish = FI.c_vanish . unIDB
 

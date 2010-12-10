@@ -1,7 +1,6 @@
-{-# LANGUAGE ForeignFunctionInterface,
-             EmptyDataDecls,
-             CPP #-}
-
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE CPP #-}
 ------------------------------------------------------------------------------
 -- |
 -- Inner guts of haskell binding for laputa.h.

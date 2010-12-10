@@ -7,7 +7,7 @@
 -- Stability   : experimental
 -- Portability : non-portable
 --
--- Internal helper functions .
+-- Internal helper functions.
 --
 
 module Database.TokyoDystopia.Internal
@@ -21,29 +21,23 @@ import Data.Bits (Bits, (.|.))
 import Foreign ( Ptr, Storable )
 import Foreign.C.Types ( CInt )
 import Foreign.C.String ( CString )
-import Database.TokyoDystopia.Types
-    ( OpenMode(..)
-    , GetMode(..)
-    , TuningOption(..) )
+import Database.TokyoDystopia.Types ( OpenMode(..) )
 import qualified Foreign as FG
 import qualified Foreign.C.String as CS
--- import qualified Database.TokyoCabinet as TC
 
 -- | Bitwise or for bits.
 bitOr :: (Bits a) => [a] -> a
 bitOr = foldr (.|.) 0
 
-
 -- | Helper function for opening database.
 mkOpen :: (Ptr a -> CString -> CInt -> IO Bool)
-       -> (b -> Ptr a) 
+       -> (b -> Ptr a)
        -> (OpenMode -> CInt)
-       -> b 
+       -> b
        -> FilePath -> [OpenMode] -> IO Bool
 mkOpen dbFunc unDB modeFunc = \db path modes ->
     CS.withCString path $ \path' ->
         dbFunc (unDB db) path' (bitOr $ fmap modeFunc modes)
-
 
 -- | Helper function for searching database.
 mkSearch :: (Integral a, Storable a, Storable a1)
@@ -63,6 +57,12 @@ mkSearch searchFunc unDB modeFunc db query modes =
       FG.free res
       return res'
 
+mkSearch2 :: (Integral a, Storable a, Storable a1)
+          => (t1 -> CString -> Ptr a -> IO (Ptr a1))
+          -> (t -> t1)
+          -> t
+          -> String
+          -> IO [a1]
 mkSearch2 searchFunc unDB = \db query -> do
   FG.with 0 $ \counterP ->
     CS.withCString query $ \query' -> do

@@ -53,9 +53,7 @@ import Database.TokyoDystopia.Types
     , GetMode(..)
     , TuningOption(..) )
 
-import qualified Foreign as FG
 import qualified Foreign.C.String as CS
-import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
 
 import qualified Database.TokyoCabinet.Error as TCE

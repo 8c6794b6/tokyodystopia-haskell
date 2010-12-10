@@ -1,14 +1,13 @@
-{-# LANGUAGE ForeignFunctionInterface,
-             EmptyDataDecls,
-             CPP #-}
-
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE CPP #-}
 ------------------------------------------------------------------------------
--- | 
+-- |
 -- Inner guts of haskell binding for tcqdb.h.
--- 
+--
 module Database.TokyoDystopia.FFI.QDB
-    ( 
-    -- * Types and constants  
+    (
+    -- * Types and constants
 
     -- ** Database
       TCQDB
@@ -66,7 +65,7 @@ import Foreign.C.String
 #include <tcqdb.h>
 
 ------------------------------------------------------------------------------
--- 
+--
 -- Haskell Side Datatype definitions
 --
 ------------------------------------------------------------------------------
@@ -83,9 +82,9 @@ data TuningOption = TuningOption { unTuningOption :: CInt }
 data TCQDB
 
 ------------------------------------------------------------------------------
--- 
--- Enums 
--- 
+--
+-- Enums
+--
 ------------------------------------------------------------------------------
 
 #{enum OpenMode, OpenMode
@@ -109,9 +108,9 @@ data TCQDB
  , toTcbs = QDBTTCBS }
 
 ------------------------------------------------------------------------------
--- 
+--
 -- Function calls
--- 
+--
 ------------------------------------------------------------------------------
 
 foreign import ccall "tcqdb.h tcqdberrmsg"

@@ -1,10 +1,9 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving,
-             PackageImports,
-             FunctionalDependencies,
-             MultiParamTypeClasses,
-             TypeSynonymInstances,
-             FlexibleInstances
-  #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 ------------------------------------------------------------------------------
 -- |
 -- Module      : Data.TokyoDystopia.Class
@@ -25,8 +24,8 @@ import "monads-fd" Control.Monad.Trans( MonadIO )
 
 import Database.TokyoCabinet.List ( List )
 
-import Database.TokyoDystopia.Types 
-    ( OpenMode 
+import Database.TokyoDystopia.Types
+    ( OpenMode
     , GetMode
     , TuningOption )
 import Database.TokyoDystopia.IDB ( IDB )
@@ -40,22 +39,22 @@ import qualified Database.TokyoDystopia.WDB as WDB
 
 
 -- | Wrapper for Tokyo Dystopia database related computation.
-newtype TDM a = TDM 
+newtype TDM a = TDM
     { -- | Unwraps Tokyo Dystopia Monad.
-      runTDM :: IO a 
+      runTDM :: IO a
     } deriving (Functor, Monad, MonadIO)
 
 
 -- | Typeclass for types of database found in tokyo dystopia.
--- 
+--
 -- * IDB : All functions are implemented.
--- 
+--
 -- * QDB : @get@ will always return @Nothing@.
--- 
+--
 -- * JDB : All functions are implemented.
 --
 -- * WDB : @get@ will always return @Nothing@, and @GetMode@ in search has no effect.
--- 
+--
 class TDDB db val | db -> val where
 
     new :: TDM db
@@ -63,7 +62,7 @@ class TDDB db val | db -> val where
 
     open :: db -> FilePath -> [OpenMode] -> TDM Bool
     open = undefined
-    
+
     close :: db -> TDM Bool
     close = undefined
 
@@ -93,9 +92,9 @@ class TDDB db val | db -> val where
 
 
 ------------------------------------------------------------------------------
--- 
+--
 -- IDB
--- 
+--
 ------------------------------------------------------------------------------
 
 instance TDDB IDB ByteString where
@@ -114,7 +113,7 @@ instance TDDB IDB ByteString where
 
     del = TDM . IDB.del
 
-    tune db etnum ernum iusiz opts = TDM $ IDB.tune db etnum ernum iusiz opts 
+    tune db etnum ernum iusiz opts = TDM $ IDB.tune db etnum ernum iusiz opts
 
     path = TDM . IDB.path
 
@@ -124,9 +123,9 @@ instance TDDB IDB ByteString where
 
 
 ------------------------------------------------------------------------------
--- 
+--
 -- QDB
--- 
+--
 ------------------------------------------------------------------------------
 
 instance TDDB QDB ByteString where
@@ -145,7 +144,7 @@ instance TDDB QDB ByteString where
 
     del = TDM . QDB.del
 
-    tune db etnum _ _ opts = TDM $ QDB.tune db etnum opts 
+    tune db etnum _ _ opts = TDM $ QDB.tune db etnum opts
 
     path = TDM . QDB.path
 
@@ -155,9 +154,9 @@ instance TDDB QDB ByteString where
 
 
 ------------------------------------------------------------------------------
--- 
+--
 -- JDB
--- 
+--
 ------------------------------------------------------------------------------
 
 instance TDDB JDB (List ByteString) where
@@ -170,13 +169,13 @@ instance TDDB JDB (List ByteString) where
 
     get db k = TDM $ fmap return $ JDB.get db k
 
-    put db k v = TDM $ JDB.put db k v 
+    put db k v = TDM $ JDB.put db k v
 
     search db query modes = TDM $ JDB.search db query modes
 
     del = TDM . JDB.del
 
-    tune db etnum ernum iusiz opts = TDM $ JDB.tune db etnum ernum iusiz opts 
+    tune db etnum ernum iusiz opts = TDM $ JDB.tune db etnum ernum iusiz opts
 
     path = TDM . JDB.path
 
@@ -186,9 +185,9 @@ instance TDDB JDB (List ByteString) where
 
 
 ------------------------------------------------------------------------------
--- 
+--
 -- WDB
--- 
+--
 ------------------------------------------------------------------------------
 
 instance TDDB WDB (List ByteString) where
@@ -201,13 +200,13 @@ instance TDDB WDB (List ByteString) where
 
     get _ _ = TDM (return Nothing)
 
-    put db k v = TDM $ WDB.put db k v 
+    put db k v = TDM $ WDB.put db k v
 
-    search db query _ = TDM $ WDB.search db query 
+    search db query _ = TDM $ WDB.search db query
 
     del = TDM . WDB.del
 
-    tune db etnum _ _ opts = TDM $ WDB.tune db etnum opts 
+    tune db etnum _ _ opts = TDM $ WDB.tune db etnum opts
 
     path = TDM . WDB.path
 

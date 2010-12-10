@@ -1,14 +1,13 @@
-{-# LANGUAGE ForeignFunctionInterface,
-             EmptyDataDecls,
-             CPP #-}
-
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE CPP #-}
 ------------------------------------------------------------------------------
--- | 
+-- |
 -- Inner guts of haskell binding for tcwdb.h.
--- 
+--
 module Database.TokyoDystopia.FFI.WDB
-    ( 
-    -- * Types and constants  
+    (
+    -- * Types and constants
 
     -- ** Database
       TCWDB
@@ -71,7 +70,7 @@ import Database.TokyoCabinet.List.C ( LIST )
 #include <tcwdb.h>
 
 ------------------------------------------------------------------------------
--- 
+--
 -- Haskell Side Datatype definitions
 --
 ------------------------------------------------------------------------------
@@ -88,9 +87,9 @@ data TuningOption = TuningOption { unTuningOption :: CInt }
 data TCWDB
 
 ------------------------------------------------------------------------------
--- 
--- Enums 
--- 
+--
+-- Enums
+--
 ------------------------------------------------------------------------------
 
 #{enum OpenMode, OpenMode
@@ -114,9 +113,9 @@ data TCWDB
  , toTcbs = QDBTTCBS }
 
 ------------------------------------------------------------------------------
--- 
+--
 -- Function calls
--- 
+--
 ------------------------------------------------------------------------------
 
 foreign import ccall "tcwdb.h tcwdberrmsg"

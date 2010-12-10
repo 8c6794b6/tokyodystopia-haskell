@@ -19,7 +19,6 @@ module Database.TokyoDystopia.Utils
     , withTDDB
     ) where
 
-import Data.ByteString ( ByteString )
 import Database.TokyoDystopia.Types 
     ( ECODE(..)
     , OpenMode(..) )

@@ -71,7 +71,7 @@ main = do
 test_read_idb :: TDM (Maybe ByteString)
 test_read_idb = do
   db <- TD.new :: TDM IDB
-  TD.open db "/home/atsuro/tmp/tokyo/dystopia/dyst/casket" [OWRITER]
+  TD.open db "test/idb/casket" [OWRITER]
   val <- TD.get db 1
   TD.close db >> TD.del db
   return val
@@ -79,7 +79,7 @@ test_read_idb = do
 test_write_idb :: TDM Bool
 test_write_idb = do
   db <- TD.new :: TDM IDB
-  TD.open db "test/casket" [OCREAT, OWRITER]
+  TD.open db "test/idb/casket" [OCREAT, OWRITER]
   res <- mapM (uncurry $ TD.put db)
        [ (1, "foo")
        , (2, "bar")
@@ -90,7 +90,7 @@ test_write_idb = do
 test_read_idb_2 :: Int64 -> TDM (Maybe ByteString)
 test_read_idb_2 key = do
   db <- TD.new :: TDM IDB
-  TD.open db "test/casket" [OREADER]
+  TD.open db "test/idb/casket" [OREADER]
   res <- TD.get db key
   TD.close db >> TD.del db
   return res
@@ -98,7 +98,7 @@ test_read_idb_2 key = do
 test_search_idb :: String -> TDM [(Int64, ByteString)]
 test_search_idb query = do
   db <- (TD.new :: TDM IDB)
-  TD.open db "/home/atsuro/tmp/tokyo/dystopia/dyst/casket" [OREADER]
+  TD.open db "test/idb/casket" [OREADER]
   ks <- TD.search db query [GMSUBSTR]
   res <- mapM (\k -> TD.get db k >>= \(Just v) -> return (k,v)) ks
   TD.close db >> TD.del db

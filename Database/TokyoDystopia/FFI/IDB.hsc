@@ -1,14 +1,13 @@
-{-# LANGUAGE ForeignFunctionInterface,
-             EmptyDataDecls,
-             CPP #-}
-
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE CPP #-}
 ------------------------------------------------------------------------------
--- | 
+-- |
 -- Inner guts of haskell binding for dystopia.h.
--- 
+--
 module Database.TokyoDystopia.FFI.IDB
-    ( 
-    -- * Types and constants  
+    (
+    -- * Types and constants
 
     -- ** Database
       TCIDB
@@ -73,7 +72,7 @@ import Foreign.C.String
 #include <dystopia.h>
 
 ------------------------------------------------------------------------------
--- 
+--
 -- Haskell Side Datatype definitions
 --
 ------------------------------------------------------------------------------
@@ -90,9 +89,9 @@ data TuningOption = TuningOption { unTuningOption :: CInt }
 data TCIDB
 
 ------------------------------------------------------------------------------
--- 
--- Enums 
--- 
+--
+-- Enums
+--
 ------------------------------------------------------------------------------
 
 #{enum OpenMode, OpenMode
@@ -119,9 +118,9 @@ data TCIDB
  , toTcbs = IDBTTCBS }
 
 ------------------------------------------------------------------------------
--- 
+--
 -- Function calls
--- 
+--
 ------------------------------------------------------------------------------
 
 foreign import ccall "dystopia.h tcidberrmsg"
