@@ -36,6 +36,8 @@ module Database.TokyoDystopia.FFI.WDB
     , toTcbs
 
     -- * C Functions
+
+    -- ** Basic functions
     , c_errmsg
     , c_new
     , c_del
@@ -58,14 +60,28 @@ module Database.TokyoDystopia.FFI.WDB
     , c_tnum
     , c_fsiz
     , c_sync
+
+    -- ** Advanced functions
+    , c_setdbgfd
+    , c_dbgfd
+    , c_memsync
+    , c_cacheclear
+    , c_inode
+    , c_mtime
+    , c_opts
+    , c_fwmmax
+    , c_setsynccb
+    , c_setsynccb_wrapper
+    , c_setaddcb
+    , c_setaddcb_wrapper
     ) where
 
-import Data.Int ( Int32, Int64 )
-import Foreign ( Ptr )
-import Foreign.C.Types ( CInt, CUInt )
-import Foreign.C.String ( CString )
+import Data.Int (Int32, Int64)
+import Foreign (Ptr, FunPtr)
+import Foreign.C.Types (CInt, CTime, CUInt)
+import Foreign.C.String (CString)
 
-import Database.TokyoCabinet.List.C ( LIST )
+import Database.TokyoCabinet.List.C (LIST)
 
 #include <tcwdb.h>
 
@@ -119,67 +135,108 @@ data TCWDB
 ------------------------------------------------------------------------------
 
 foreign import ccall "tcwdb.h tcwdberrmsg"
-        c_errmsg :: CInt -> CString
+  c_errmsg :: CInt -> CString
 
 foreign import ccall "tcwdb.h tcwdbnew"
-        c_new :: IO (Ptr TCWDB)
+  c_new :: IO (Ptr TCWDB)
 
 foreign import ccall "tcwdb.h tcwdbdel"
-        c_del :: Ptr TCWDB -> IO ()
+  c_del :: Ptr TCWDB -> IO ()
 
 foreign import ccall "tcwdb.h tcwdbecode"
-        c_ecode :: Ptr TCWDB -> IO CInt
+  c_ecode :: Ptr TCWDB -> IO CInt
 
 foreign import ccall "tcwdb.h tcwdbtune"
-        c_tune :: Ptr TCWDB -> Int64 -> CUInt -> IO Bool
+  c_tune :: Ptr TCWDB -> Int64 -> CUInt -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdbsetcache"
-        c_setcache :: Ptr TCWDB -> Int64 -> Int32 -> IO Bool
+  c_setcache :: Ptr TCWDB -> Int64 -> Int32 -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdbsetfwmmax"
-        c_setfwmmax :: Ptr TCWDB -> Int32 -> IO Bool
+  c_setfwmmax :: Ptr TCWDB -> Int32 -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdbcnum"
-        c_cnum :: Ptr TCWDB -> IO CUInt
+  c_cnum :: Ptr TCWDB -> IO CUInt
 
 foreign import ccall "tcwdb.h tcwdbopen"
-        c_open :: Ptr TCWDB -> CString -> CInt -> IO Bool
+  c_open :: Ptr TCWDB -> CString -> CInt -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdbclose"
-        c_close :: Ptr TCWDB -> IO Bool
+  c_close :: Ptr TCWDB -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdbput"
-        c_put :: Ptr TCWDB -> Int64 -> Ptr LIST -> IO Bool
+  c_put :: Ptr TCWDB -> Int64 -> Ptr LIST -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdbput2"
-        c_put2 :: Ptr TCWDB -> Int64 -> CString -> CString -> IO Bool
+  c_put2 :: Ptr TCWDB -> Int64 -> CString -> CString -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdbout"
-        c_out :: Ptr TCWDB -> Int64 -> CString -> IO Bool
+  c_out :: Ptr TCWDB -> Int64 -> CString -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdbout2"
-        c_out2 :: Ptr TCWDB -> Int64 -> CString -> CString -> IO Bool
+  c_out2 :: Ptr TCWDB -> Int64 -> CString -> CString -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdbsearch"
-        c_search :: Ptr TCWDB -> CString -> Ptr CInt -> IO (Ptr Int64)
+  c_search :: Ptr TCWDB -> CString -> Ptr CInt -> IO (Ptr Int64)
 
 foreign import ccall "tcwdb.h tcwdbsync"
-        c_sync :: Ptr TCWDB -> IO Bool
+  c_sync :: Ptr TCWDB -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdboptimize"
-        c_optimize :: Ptr TCWDB -> IO Bool
+  c_optimize :: Ptr TCWDB -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdbvanish"
-        c_vanish :: Ptr TCWDB -> IO Bool
+  c_vanish :: Ptr TCWDB -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdbcopy"
-        c_copy :: Ptr TCWDB -> CString -> IO Bool
+  c_copy :: Ptr TCWDB -> CString -> IO Bool
 
 foreign import ccall "tcwdb.h tcwdbpath"
-        c_path :: Ptr TCWDB -> IO CString
+  c_path :: Ptr TCWDB -> IO CString
 
 foreign import ccall "tcwdb.h tcwdbtnum"
-        c_tnum :: Ptr TCWDB -> IO Int64
+  c_tnum :: Ptr TCWDB -> IO Int64
 
 foreign import ccall "tcwdb.h tcwdbfsiz"
-        c_fsiz :: Ptr TCWDB -> IO Int64
+  c_fsiz :: Ptr TCWDB -> IO Int64
+
+--
+-- Advanced functions
+--
+
+foreign import ccall "tcwdb.h tcwdbsetdbgfd"
+  c_setdbgfd :: Ptr TCWDB -> CInt -> IO ()
+
+foreign import ccall "tcwdb.h tcwdbdbgfd"
+  c_dbgfd :: Ptr TCWDB -> IO CInt
+
+foreign import ccall "tcwdb.h tcwdbmemsync"
+  c_memsync :: Ptr TCWDB -> CInt -> IO Bool
+
+foreign import ccall "tcwdb.h tcwdbcacheclear"
+  c_cacheclear :: Ptr TCWDB -> IO Bool
+
+foreign import ccall "tcwdb.h tcwdbinode"
+  c_inode :: Ptr TCWDB -> IO Int64
+
+foreign import ccall "tcwdb.h tcwdbmtime"
+  c_mtime :: Ptr TCWDB -> IO CTime
+
+foreign import ccall "tcwdb.h tcwdbopts"
+  c_opts :: Ptr TCWDB -> IO Int
+
+foreign import ccall "tcwdb.h tcwdbfwmmax"
+  c_fwmmax :: Ptr TCWDB -> IO Int32
+
+foreign import ccall "wrapper"
+  c_setsynccb_wrapper :: (CInt -> CInt -> CString -> IO Bool)
+                      -> IO (FunPtr (CInt -> CInt -> CString -> IO Bool))
+
+foreign import ccall "tcwdb.h tcwdbsetsynccb"
+  c_setsynccb :: Ptr TCWDB -> FunPtr (CInt -> CInt -> CString -> IO Bool) -> IO Bool
+
+foreign import ccall "wrapper"
+  c_setaddcb_wrapper :: (CString -> IO ()) -> IO (FunPtr (CString -> IO ()))
+
+foreign import ccall "tcwdb.h tcwdbsetaddcb"
+  c_setaddcb :: Ptr TCWDB -> FunPtr (CString -> IO ()) -> IO ()

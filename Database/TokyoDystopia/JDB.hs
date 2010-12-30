@@ -35,10 +35,20 @@ module Database.TokyoDystopia.JDB
     , sync
     , tune
     , vanish
+    , setdbgfd
+    , getdbgfd
+    , memsync
+    , inode
+    , mtime
+    , opts
+    , setsynccb
+    , setexopts
     ) where
 
 import Data.Int ( Int64 )
 import Data.ByteString ( ByteString )
+import Data.Time ( UTCTime )
+import Data.Time.Clock.POSIX ( posixSecondsToUTCTime )
 import Foreign ( Ptr, maybePeek )
 import Foreign.ForeignPtr ( withForeignPtr )
 
@@ -47,7 +57,7 @@ import Database.TokyoCabinet.List.C ( List(..) )
 import Database.TokyoCabinet.Sequence ( peekList' )
 import Database.TokyoCabinet.Storable ( Storable )
 
-import Database.TokyoDystopia.Internal ( bitOr )
+import Database.TokyoDystopia.Internal ( bitOr, toTuningOptions )
 import Database.TokyoDystopia.Types
     ( OpenMode(..)
     , GetMode(..)
@@ -163,10 +173,10 @@ sync :: JDB -> IO Bool
 sync = FJ.c_sync . unJDB
 
 tune :: JDB -> Int64 -> Int64 -> Int64 -> [TuningOption] -> IO Bool
-tune db ernum etnum iusiz opts =
-  FJ.c_tune (unJDB db) ernum etnum iusiz opts'
+tune db ernum etnum iusiz os =
+  FJ.c_tune (unJDB db) ernum etnum iusiz os'
   where
-    opts' = fromIntegral . bitOr $ map (FJ.unTuningOption . f) opts
+    os' = fromIntegral . bitOr $ map (FJ.unTuningOption . f) os
     f TLARGE   = FJ.toLarge
     f TDEFLATE = FJ.toDeflate
     f TBZIP    = FJ.toBzip
@@ -175,3 +185,49 @@ tune db ernum etnum iusiz opts =
 
 vanish :: JDB -> IO Bool
 vanish = FJ.c_vanish . unJDB
+
+
+--
+-- Advanced features
+--
+
+-- | Set file descriptor for debugging output.
+setdbgfd :: JDB -> Int -> IO ()
+setdbgfd db dbg = FJ.c_setdbgfd (unJDB db) (fromIntegral dbg)
+
+-- | Get file descriptor for debugging output
+getdbgfd :: JDB -> IO Int
+getdbgfd = fmap fromIntegral . FJ.c_dbgfd . unJDB
+
+-- | Synchronize updating contents on memory of an indexed database object
+memsync :: JDB -> Int -> IO Bool
+memsync db level = FJ.c_memsync (unJDB db) (fromIntegral level)
+
+-- | Get the inode number of the database dictionary of an indexed database
+-- object.
+inode :: JDB -> IO Int64
+inode = FJ.c_inode . unJDB
+
+-- | Get the modificatoin time of the database directory of an indexed database
+-- object.
+mtime :: JDB -> IO UTCTime
+mtime = fmap (posixSecondsToUTCTime . realToFrac) . FJ.c_mtime . unJDB
+
+-- | Get the options of an indexed database object.
+opts :: JDB -> IO [TuningOption]
+opts = fmap toTuningOptions . FJ.c_opts . unJDB
+
+-- | Set the callback function for sync progression.
+setsynccb :: JDB -> (Int -> Int -> String -> IO Bool) -> IO Bool
+setsynccb db cb = do
+  cb' <- FJ.c_setsynccb_wrapper (\i1 i2 s -> do
+                                    s' <- CS.peekCString s
+                                    let i1' = fromIntegral i1
+                                        i2' = fromIntegral i2
+                                    cb i1' i2' s')
+  FJ.c_setsynccb (unJDB db) cb'
+
+-- | Set the expert options.
+setexopts :: JDB -> [FJ.ExpertOption] -> IO ()
+setexopts db os = FJ.c_setexopts (unJDB db) . fromIntegral . sum $
+                  map FJ.unExpertOption os

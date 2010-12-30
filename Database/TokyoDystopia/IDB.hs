@@ -11,7 +11,10 @@
 --
 
 module Database.TokyoDystopia.IDB
-    ( IDB()
+    ( -- * Type
+      IDB()
+
+      -- * Basic functions
     , close
     , copy
     , del
@@ -34,19 +37,30 @@ module Database.TokyoDystopia.IDB
     , sync
     , tune
     , vanish
+
+    -- * Advanced functions
+    , setdbgfd
+    , getdbgfd
+    , memsync
+    , inode
+    , mtime
+    , opts
+    , setsynccb
+    , setexopts
     ) where
 
-import Data.ByteString ( ByteString )
-import Data.Int ( Int64 )
-import Foreign ( Ptr, maybePeek )
-import Database.TokyoCabinet.Storable ( Storable )
-import Database.TokyoCabinet ( ECODE(..) )
-import Database.TokyoDystopia.Internal ( bitOr )
+import Data.ByteString (ByteString)
+import Data.Int (Int64)
+import Data.Time (UTCTime)
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
+import Foreign (Ptr, maybePeek)
+import Database.TokyoCabinet.Storable (Storable)
+import Database.TokyoCabinet (ECODE(..))
+import Database.TokyoDystopia.Internal (bitOr, toTuningOptions)
 import Database.TokyoDystopia.Types
     ( OpenMode(..)
     , GetMode(..)
     , TuningOption(..) )
-
 import qualified Data.ByteString.Char8 as C8
 import qualified Foreign.C.String as CS
 import qualified Database.TokyoCabinet.Error as TCE
@@ -116,10 +130,10 @@ ecode db = fmap TCE.cintToError (FI.c_ecode $ unIDB db)
 
 -- | Tune the database. Must be used before opening database.
 tune :: IDB -> Int64 -> Int64 -> Int64 -> [TuningOption] -> IO Bool
-tune db ernum etnum iusiz opts =
-    FI.c_tune (unIDB db) ernum etnum iusiz opts'
+tune db ernum etnum iusiz os =
+    FI.c_tune (unIDB db) ernum etnum iusiz os'
     where
-      opts' = fromIntegral $ bitOr $ map (FI.unTuningOption . f) opts
+      os' = fromIntegral $ bitOr $ map (FI.unTuningOption . f) os
       f TLARGE   = FI.toLarge
       f TDEFLATE = FI.toDeflate
       f TBZIP    = FI.toBzip
@@ -174,3 +188,48 @@ rnum = FI.c_rnum . unIDB
 -- | Get filesize of the database.
 fsiz :: IDB -> IO Int64
 fsiz = FI.c_fsiz . unIDB
+
+--
+-- Advanced features
+--
+
+-- | Set file descriptor for debugging output.
+setdbgfd :: IDB -> Int -> IO ()
+setdbgfd db dbg = FI.c_setdbgfd (unIDB db) (fromIntegral dbg)
+
+-- | Get file descriptor for debugging output
+getdbgfd :: IDB -> IO Int
+getdbgfd = fmap fromIntegral . FI.c_dbgfd . unIDB
+
+-- | Synchronize updating contents on memory of an indexed database object
+memsync :: IDB -> Int -> IO Bool
+memsync db level = FI.c_memsync (unIDB db) (fromIntegral level)
+
+-- | Get the inode number of the database dictionary of an indexed database
+-- object.
+inode :: IDB -> IO Int64
+inode = FI.c_inode . unIDB
+
+-- | Get the modificatoin time of the database directory of an indexed database
+-- object.
+mtime :: IDB -> IO UTCTime
+mtime = fmap (posixSecondsToUTCTime . realToFrac) . FI.c_mtime . unIDB
+
+-- | Get the options of an indexed database object.
+opts :: IDB -> IO [TuningOption]
+opts = fmap toTuningOptions . FI.c_opts . unIDB
+
+-- | Set the callback function for sync progression.
+setsynccb :: IDB -> (Int -> Int -> String -> IO Bool) -> IO Bool
+setsynccb db cb = do
+  cb' <- FI.c_setsynccb_wrapper (\i1 i2 s -> do
+                                    s' <- CS.peekCString s
+                                    let i1' = fromIntegral i1
+                                        i2' = fromIntegral i2
+                                    cb i1' i2' s')
+  FI.c_setsynccb (unIDB db) cb'
+
+-- | Set the expert options.
+setexopts :: IDB -> [FI.ExpertOption] -> IO ()
+setexopts db os = FI.c_setexopts (unIDB db) . fromIntegral . sum $
+                  map FI.unExpertOption os

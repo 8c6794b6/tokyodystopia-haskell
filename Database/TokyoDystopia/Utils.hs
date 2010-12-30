@@ -19,7 +19,7 @@ module Database.TokyoDystopia.Utils
     , withTDDB
     ) where
 
-import Database.TokyoDystopia.Types 
+import Database.TokyoDystopia.Types
     ( ECODE(..)
     , OpenMode(..) )
 import Database.TokyoDystopia.Class ()
@@ -36,7 +36,7 @@ import qualified Database.TokyoDystopia.QDB as QDB
 import qualified Database.TokyoDystopia.JDB as JDB
 import qualified Database.TokyoDystopia.WDB as WDB
 
-
+-- | Run db action with TDDB.
 withTDDB :: (TDDB db val) => FilePath -> [OpenMode] -> (db -> TDM a) -> IO a
 withTDDB file modes func= TDDB.runTDM $ do
   db <- TDDB.new
@@ -46,22 +46,21 @@ withTDDB file modes func= TDDB.runTDM $ do
   TDDB.del db
   return res
 
-
+-- | Run db action with IDB.
 withIDB :: FilePath -> [OpenMode] -> (IDB -> IO a) -> IO a
 withIDB = withDB IDB.new IDB.open IDB.close IDB.del
 
-
+-- | Run db action with QDB.
 withQDB :: FilePath -> [OpenMode] -> (QDB -> IO a) -> IO a
 withQDB = withDB QDB.new QDB.open QDB.close QDB.del
 
-
+-- | Run db action with JDB.
 withJDB :: FilePath -> [OpenMode] -> (JDB -> IO a) -> IO a
 withJDB = withDB JDB.new JDB.open JDB.close JDB.del
 
-
+-- | Run db action with WDB.
 withWDB :: FilePath -> [OpenMode] -> (WDB -> IO a) -> IO a
 withWDB = withDB WDB.new WDB.open WDB.close WDB.del
-
 
 -- | Helper for making `with` variants.
 withDB :: (Monad m)
@@ -78,7 +77,6 @@ withDB newF openF closeF delF = \file modes task -> do
   closeF db
   delF db
   return res
-
 
 -- | Get string message from error code.
 errmsg :: ECODE -> String

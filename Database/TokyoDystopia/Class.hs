@@ -47,14 +47,6 @@ newtype TDM a = TDM
 
 -- | Typeclass for types of database found in tokyo dystopia.
 --
--- * IDB : All functions are implemented.
---
--- * QDB : @get@ will always return @Nothing@.
---
--- * JDB : All functions are implemented.
---
--- * WDB : @get@ will always return @Nothing@, and @GetMode@ in search has no effect.
---
 class TDDB db val | db -> val where
 
     new :: TDM db
@@ -97,6 +89,7 @@ class TDDB db val | db -> val where
 --
 ------------------------------------------------------------------------------
 
+-- | All functions are implemented.
 instance TDDB IDB ByteString where
 
     new = TDM IDB.new
@@ -128,6 +121,7 @@ instance TDDB IDB ByteString where
 --
 ------------------------------------------------------------------------------
 
+-- | @get@ will always return @Nothing@.
 instance TDDB QDB ByteString where
 
     new = TDM QDB.new
@@ -159,6 +153,7 @@ instance TDDB QDB ByteString where
 --
 ------------------------------------------------------------------------------
 
+-- | All functions are implemented.
 instance TDDB JDB (List ByteString) where
 
     new = TDM JDB.new
@@ -190,6 +185,7 @@ instance TDDB JDB (List ByteString) where
 --
 ------------------------------------------------------------------------------
 
+-- | @get@ will always return @Nothing@, and @GetMode@ in search has no effect.
 instance TDDB WDB (List ByteString) where
 
     new = TDM WDB.new

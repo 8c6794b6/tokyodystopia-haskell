@@ -34,7 +34,13 @@ module Database.TokyoDystopia.FFI.JDB
     , toBzip
     , toTcbs
 
+    -- ** Expert options
+    , ExpertOption(..)
+    , eoNoTxt
+
     -- * C functions
+
+    -- ** Basic functions
     , c_errmsg
     , c_new
     , c_del
@@ -61,12 +67,23 @@ module Database.TokyoDystopia.FFI.JDB
     , c_rnum
     , c_fsiz
 
+    -- ** Features for experts
+    , c_setdbgfd
+    , c_dbgfd
+    , c_memsync
+    , c_inode
+    , c_mtime
+    , c_opts
+    , c_setsynccb
+    , c_setsynccb_wrapper
+    , c_setexopts
+
     ) where
 
-import Data.Int ( Int32, Int64 )
-import Foreign ( Ptr )
-import Foreign.C.Types ( CInt , CUInt )
-import Foreign.C.String ( CString )
+import Data.Int (Int32, Int64)
+import Foreign (Ptr, FunPtr)
+import Foreign.C.Types (CInt, CTime, CUInt)
+import Foreign.C.String (CString)
 
 import Database.TokyoCabinet.List.C ( LIST )
 
@@ -86,6 +103,9 @@ data GetMode = GetMode { unGetMode :: CInt }
 
 data TuningOption = TuningOption { unTuningOption :: CInt }
                deriving (Eq, Show)
+
+data ExpertOption = ExpertOption { unExpertOption :: CInt }
+  deriving (Eq, Show)
 
 data TCJDB
 
@@ -110,6 +130,8 @@ data TCJDB
  , toBzip    = JDBTBZIP
  , toTcbs    = JDBTTCBS }
 
+#{enum ExpertOption, ExpertOption
+ , eoNoTxt = JDBXNOTXT }
 
 ------------------------------------------------------------------------------
 --
@@ -118,76 +140,110 @@ data TCJDB
 ------------------------------------------------------------------------------
 
 foreign import ccall "laputa.h tcjdberrmsg"
-        c_errmsg :: CInt -> CString
+  c_errmsg :: CInt -> CString
 
 foreign import ccall "laputa.h tcjdbnew"
-        c_new :: IO (Ptr TCJDB)
+  c_new :: IO (Ptr TCJDB)
 
 foreign import ccall "laputa.h tcjdbdel"
-        c_del :: Ptr TCJDB -> IO ()
+  c_del :: Ptr TCJDB -> IO ()
 
 foreign import ccall "laputa.h tcjdbecode"
-        c_ecode :: Ptr TCJDB -> IO CInt
+  c_ecode :: Ptr TCJDB -> IO CInt
 
 foreign import ccall "laputa.h tcjdbtune"
-        c_tune :: Ptr TCJDB -> Int64 -> Int64 -> Int64 -> CUInt -> IO Bool
+  c_tune :: Ptr TCJDB -> Int64 -> Int64 -> Int64 -> CUInt -> IO Bool
 
 foreign import ccall "laputa.h tcjdbsetcache"
-        c_setcache :: Ptr TCJDB -> Int64 -> Int32 -> IO Bool
+  c_setcache :: Ptr TCJDB -> Int64 -> Int32 -> IO Bool
 
 foreign import ccall "laputa.h tcjdbsetfwmmax"
-        c_setfwmmax :: Ptr TCJDB -> Int32 -> IO Bool
+  c_setfwmmax :: Ptr TCJDB -> Int32 -> IO Bool
 
 foreign import ccall "laputa.h tcjdbopen"
-        c_open :: Ptr TCJDB -> CString -> CInt -> IO Bool
+  c_open :: Ptr TCJDB -> CString -> CInt -> IO Bool
 
 foreign import ccall "laputa.h tcjdbclose"
-        c_close :: Ptr TCJDB -> IO Bool
+  c_close :: Ptr TCJDB -> IO Bool
 
 foreign import ccall "laputa.h tcjdbput"
-        c_put :: Ptr TCJDB -> Int64 -> Ptr LIST -> IO Bool
+  c_put :: Ptr TCJDB -> Int64 -> Ptr LIST -> IO Bool
 
 foreign import ccall "laputa.h tcjdbput2"
-        c_put2 :: Ptr TCJDB -> Int64 -> CString -> CString -> IO Bool
+  c_put2 :: Ptr TCJDB -> Int64 -> CString -> CString -> IO Bool
 
 foreign import ccall "laputa.h tcjdbout"
-        c_out :: Ptr TCJDB -> Int64 -> IO Bool
+  c_out :: Ptr TCJDB -> Int64 -> IO Bool
 
 foreign import ccall "laputa.h tcjdbget"
-        c_get :: Ptr TCJDB -> Int64 -> IO (Ptr LIST)
+  c_get :: Ptr TCJDB -> Int64 -> IO (Ptr LIST)
 
 foreign import ccall "laputa.h tcjdbget2"
-        c_get2 :: Ptr TCJDB -> Int64 -> IO CString
+  c_get2 :: Ptr TCJDB -> Int64 -> IO CString
 
 foreign import ccall "laputa.h tcjdbsearch"
-        c_search :: Ptr TCJDB -> CString -> CInt -> Ptr CInt -> IO (Ptr Int64)
+  c_search :: Ptr TCJDB -> CString -> CInt -> Ptr CInt -> IO (Ptr Int64)
 
 foreign import ccall "laputa.h tcjdbsearch2"
-        c_search2 :: Ptr TCJDB -> CString -> Ptr CInt -> IO (Ptr Int64)
+  c_search2 :: Ptr TCJDB -> CString -> Ptr CInt -> IO (Ptr Int64)
 
 foreign import ccall "laputa.h tcjdbiterinit"
-        c_iterinit :: Ptr TCJDB -> IO Bool
+  c_iterinit :: Ptr TCJDB -> IO Bool
 
 foreign import ccall "laputa.h tcjdbiternext"
-        c_iternext :: Ptr TCJDB -> IO Int64
+  c_iternext :: Ptr TCJDB -> IO Int64
 
 foreign import ccall "laputa.h tcjdbsync"
-        c_sync :: Ptr TCJDB -> IO Bool
+  c_sync :: Ptr TCJDB -> IO Bool
 
 foreign import ccall "laputa.h tcjdboptimize"
-        c_optimize :: Ptr TCJDB -> IO Bool
+  c_optimize :: Ptr TCJDB -> IO Bool
 
 foreign import ccall "laputa.h tcjdbvanish"
-        c_vanish :: Ptr TCJDB -> IO Bool
+  c_vanish :: Ptr TCJDB -> IO Bool
 
 foreign import ccall "laputa.h tcjdbcopy"
-        c_copy :: Ptr TCJDB -> CString -> IO Bool
+  c_copy :: Ptr TCJDB -> CString -> IO Bool
 
 foreign import ccall "laputa.h tcjdbpath"
-        c_path :: Ptr TCJDB -> IO CString
+  c_path :: Ptr TCJDB -> IO CString
 
 foreign import ccall "laputa.h tcjdbrnum"
-        c_rnum :: Ptr TCJDB -> IO Int64
+  c_rnum :: Ptr TCJDB -> IO Int64
 
 foreign import ccall "laputa.h tcjdbfsiz"
-        c_fsiz :: Ptr TCJDB -> IO Int64
+  c_fsiz :: Ptr TCJDB -> IO Int64
+
+------------------------------------------------------------------------------
+--
+-- Advanced config, functions
+--
+------------------------------------------------------------------------------
+
+foreign import ccall "laputa.h tcjdbsetdbgfd"
+  c_setdbgfd :: Ptr TCJDB -> CInt -> IO ()
+
+foreign import ccall "laputa.h tcjdbdbgfd"
+  c_dbgfd :: Ptr TCJDB -> IO CInt
+
+foreign import ccall "laputa.h tcjdbmemsync"
+  c_memsync :: Ptr TCJDB -> CInt -> IO Bool
+
+foreign import ccall "laputa.h tcjdbinode"
+  c_inode :: Ptr TCJDB -> IO Int64
+
+foreign import ccall "laputa.h tcjdbmtime"
+  c_mtime :: Ptr TCJDB -> IO CTime
+
+foreign import ccall "laputa.h tcjdbopts"
+  c_opts :: Ptr TCJDB -> IO Int
+
+foreign import ccall "wrapper"
+  c_setsynccb_wrapper :: (CInt -> CInt -> CString -> IO Bool)
+                      -> IO (FunPtr (CInt -> CInt -> CString -> IO Bool))
+
+foreign import ccall "laputa.h tcjdbsetsynccb"
+  c_setsynccb :: Ptr TCJDB -> FunPtr (CInt -> CInt -> CString -> IO Bool) -> IO Bool
+
+foreign import ccall "laputa.h tcjdbsetexopts"
+  c_setexopts :: Ptr TCJDB -> Int32 -> IO ()

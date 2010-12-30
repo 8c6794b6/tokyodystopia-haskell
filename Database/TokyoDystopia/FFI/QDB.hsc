@@ -35,7 +35,19 @@ module Database.TokyoDystopia.FFI.QDB
     , toBzip
     , toTcbs
 
+    -- ** Text normalize options
+    , TNOption(..)
+    , tnLower
+    , tnNoAcc
+    , tnSpace
+
+    -- ** Set
+    , QDBRSET
+    , TCIDSET
+
     -- * C Functions
+
+    -- ** Basic functions
     , c_close
     , c_copy
     , c_del
@@ -55,6 +67,28 @@ module Database.TokyoDystopia.FFI.QDB
     , c_sync
     , c_tune
     , c_vanish
+
+    -- ** Advanced functions
+    , c_setdbgfd
+    , c_dbgfd
+    , c_memsync
+    , c_cacheclear
+    , c_inode
+    , c_mtime
+    , c_opts
+    , c_fwmmax
+    , c_cnum
+    , c_setsynccb
+    , c_setsynccb_wrapper
+    , c_resunion
+    , c_resisect
+    , c_resdiff
+    , c_textnormalize
+    , c_tcidsetnew
+    , c_tcidsetdel
+    , c_tcidsetmark
+    , c_tcidsetcheck
+    , c_tcidsetclear
     ) where
 
 import Data.Int
@@ -79,7 +113,14 @@ data GetMode = GetMode { unGetMode :: CInt }
 data TuningOption = TuningOption { unTuningOption :: CInt }
                deriving (Eq, Show)
 
+data TNOption = TNOption { unTNOption :: CInt }
+              deriving (Eq, Show)
+
 data TCQDB
+
+data QDBRSET
+
+data TCIDSET
 
 ------------------------------------------------------------------------------
 --
@@ -90,7 +131,7 @@ data TCQDB
 #{enum OpenMode, OpenMode
  , omReader = QDBOREADER
  , omWriter = QDBOWRITER
- , omCreat = QDBOCREAT
+ , omCreat  = QDBOCREAT
  , omTrunc  = QDBOTRUNC
  , omNolck  = QDBONOLCK
  , omLcknb  = QDBOLCKNB }
@@ -99,13 +140,18 @@ data TCQDB
  , gmSubstr = QDBSSUBSTR
  , gmPrefix = QDBSPREFIX
  , gmSuffix = QDBSSUFFIX
- , gmFull = QDBSFULL }
+ , gmFull   = QDBSFULL }
 
 #{enum TuningOption, TuningOption
- , toLarge = QDBTLARGE
+ , toLarge   = QDBTLARGE
  , toDeflate = QDBTDEFLATE
- , toBzip = QDBTBZIP
- , toTcbs = QDBTTCBS }
+ , toBzip    = QDBTBZIP
+ , toTcbs    = QDBTTCBS }
+
+#{enum TNOption, TNOption
+ , tnLower = TCTNLOWER
+ , tnNoAcc = TCTNNOACC
+ , tnSpace = TCTNSPACE }
 
 ------------------------------------------------------------------------------
 --
@@ -114,58 +160,125 @@ data TCQDB
 ------------------------------------------------------------------------------
 
 foreign import ccall "tcqdb.h tcqdberrmsg"
-        c_errmsg :: CInt -> CString
+  c_errmsg :: CInt -> CString
 
 foreign import ccall "tcqdb.h tcqdbnew"
-        c_new :: IO (Ptr TCQDB)
+  c_new :: IO (Ptr TCQDB)
 
 foreign import ccall "tcqdb.h tcqdbdel"
-        c_del :: Ptr TCQDB -> IO ()
+  c_del :: Ptr TCQDB -> IO ()
 
 foreign import ccall "tcqdb.h tcqdbecode"
-        c_ecode :: Ptr TCQDB -> IO CInt
+  c_ecode :: Ptr TCQDB -> IO CInt
 
 foreign import ccall "tcqdb.h tcqdbtune"
-        c_tune :: Ptr TCQDB -> Int64 -> CUInt -> IO Bool
+  c_tune :: Ptr TCQDB -> Int64 -> CUInt -> IO Bool
 
 foreign import ccall "tcqdb.h tcqdbsetcache"
-        c_setcache :: Ptr TCQDB -> Int64 -> Int32 -> IO Bool
+  c_setcache :: Ptr TCQDB -> Int64 -> Int32 -> IO Bool
 
 foreign import ccall "tcqdb.h tcqdbsetfwmmax"
-        c_setfwmmax :: Ptr TCQDB -> Int32 -> IO Bool
+  c_setfwmmax :: Ptr TCQDB -> Int32 -> IO Bool
 
 foreign import ccall "tcqdb.h tcqdbopen"
-        c_open :: Ptr TCQDB -> CString -> CInt -> IO Bool
+  c_open :: Ptr TCQDB -> CString -> CInt -> IO Bool
 
 foreign import ccall "tcqdb.h tcqdbclose"
-        c_close :: Ptr TCQDB -> IO Bool
+  c_close :: Ptr TCQDB -> IO Bool
 
 foreign import ccall "tcqdb.h tcqdbput"
-        c_put :: Ptr TCQDB -> Int64 -> CString -> IO Bool
+  c_put :: Ptr TCQDB -> Int64 -> CString -> IO Bool
 
 foreign import ccall "tcqdb.h tcqdbout"
-        c_out :: Ptr TCQDB -> Int64 -> CString -> IO Bool
+  c_out :: Ptr TCQDB -> Int64 -> CString -> IO Bool
 
 foreign import ccall "tcqdb.h tcqdbsearch"
-        c_search :: Ptr TCQDB -> CString -> CInt -> Ptr CInt -> IO (Ptr Int64)
+  c_search :: Ptr TCQDB -> CString -> CInt -> Ptr CInt -> IO (Ptr Int64)
 
 foreign import ccall "tcqdb.h tcqdbsync"
-        c_sync :: Ptr TCQDB -> IO Bool
+  c_sync :: Ptr TCQDB -> IO Bool
 
 foreign import ccall "tcqdb.h tcqdboptimize"
-        c_optimize :: Ptr TCQDB -> IO Bool
+  c_optimize :: Ptr TCQDB -> IO Bool
 
 foreign import ccall "tcqdb.h tcqdbvanish"
-        c_vanish :: Ptr TCQDB -> IO Bool
+  c_vanish :: Ptr TCQDB -> IO Bool
 
 foreign import ccall "tcqdb.h tcqdbcopy"
-        c_copy :: Ptr TCQDB -> CString -> IO Bool
+  c_copy :: Ptr TCQDB -> CString -> IO Bool
 
 foreign import ccall "tcqdb.h tcqdbpath"
-        c_path :: Ptr TCQDB -> IO CString
+  c_path :: Ptr TCQDB -> IO CString
 
 foreign import ccall "tcqdb.h tcqdbtnum"
-        c_tnum :: Ptr TCQDB -> IO Int64
+  c_tnum :: Ptr TCQDB -> IO Int64
 
 foreign import ccall "tcqdb.h tcqdbfsiz"
-        c_fsiz :: Ptr TCQDB -> IO Int64
+  c_fsiz :: Ptr TCQDB -> IO Int64
+
+------------------------------------------------------------------------------
+--
+-- Advanced config, functions
+--
+------------------------------------------------------------------------------
+
+foreign import ccall "tcqdb.h tcqdbsetdbgfd"
+  c_setdbgfd :: Ptr TCQDB -> CInt -> IO ()
+
+foreign import ccall "tcqdb.h tcqdbdbgfd"
+  c_dbgfd :: Ptr TCQDB -> IO CInt
+
+foreign import ccall "tcqdb.h tcqdbmemsync"
+  c_memsync :: Ptr TCQDB -> CInt -> IO Bool
+
+foreign import ccall "tcqdb.h tcqdbcacheclear"
+  c_cacheclear :: Ptr TCQDB -> IO Bool
+
+foreign import ccall "tcqdb.h tcqdbinode"
+  c_inode :: Ptr TCQDB -> IO Int64
+
+foreign import ccall "tcqdb.h tcqdbmtime"
+  c_mtime :: Ptr TCQDB -> IO CTime
+
+foreign import ccall "tcqdb.h tcqdbopts"
+  c_opts :: Ptr TCQDB -> IO Int
+
+foreign import ccall "tcqdb.h tcqdbfwmmax"
+  c_fwmmax :: Ptr TCQDB -> IO CInt
+
+foreign import ccall "tcqdb.h tcqdbcnum"
+  c_cnum :: Ptr TCQDB -> IO CInt
+
+foreign import ccall "wrapper"
+  c_setsynccb_wrapper :: (CInt -> CInt -> CString -> IO Bool)
+                      -> IO (FunPtr (CInt -> CInt -> CString -> IO Bool))
+
+foreign import ccall "tcqdb.h tcqdbsetsynccb"
+  c_setsynccb :: Ptr TCQDB -> FunPtr (CInt -> CInt -> CString -> IO Bool) -> IO Bool
+
+foreign import ccall "tcqdb.h tcqdbresunion"
+  c_resunion :: Ptr QDBRSET -> CInt -> Ptr CInt -> IO (Ptr Int64)
+
+foreign import ccall "tcqdb.h tcqdbresisect"
+  c_resisect :: Ptr QDBRSET -> CInt -> Ptr CInt -> IO (Ptr Int64)
+
+foreign import ccall "tcqdb.h tcqdbresdiff"
+  c_resdiff :: Ptr QDBRSET -> CInt -> Ptr CInt -> IO (Ptr Int64)
+
+foreign import ccall "tcqdb.h tctextnormalize"
+  c_textnormalize :: CString -> CInt -> IO ()
+
+foreign import ccall "tcqdb.h tcidsetnew"
+  c_tcidsetnew :: Int32 -> IO (Ptr TCIDSET)
+
+foreign import ccall "tcqdb.h tcidsetdel"
+  c_tcidsetdel :: Ptr TCIDSET -> IO ()
+
+foreign import ccall "tcqdb.h tcidsetmark"
+  c_tcidsetmark :: Ptr TCIDSET -> Int64 -> IO ()
+
+foreign import ccall "tcqdb.h tcidsetcheck"
+  c_tcidsetcheck :: Ptr TCIDSET -> Int64 -> IO Bool
+
+foreign import ccall "tcqdb.h tcidsetclear"
+  c_tcidsetclear :: Ptr TCIDSET -> IO ()

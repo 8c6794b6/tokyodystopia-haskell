@@ -1,38 +1,39 @@
-Name:		tokyodystopia-haskell
-Version:	0.0.2
-Synopsis:       Haskell binding of Tokyo Dystopia.
-Description:    Haskell binding of Tokyo Dystopia. Enable full text searching.
-Author:         8c6794b6
-Maintainer:     8c6794b6@gmail.com
-Cabal-Version:  >= 1.6
+name:		tokyodystopia-haskell
+version:	0.0.2
+synopsis:       Haskell binding of Tokyo Dystopia.
+author:         8c6794b6
+maintainer:     8c6794b6@gmail.com
+cabal-version:  >= 1.6
 build-type:     Simple
 license:        BSD3
 license-file:   LICENSE
 category:       Data
 stability:      experimental
+description:    Haskell binding for Tokyo Dystopia full text searching library.
 
 library
-  GHC-Options: -O2 -Wall -fno-warn-unused-do-bind
-  Exposed-Modules:
+  ghc-options: -O2 -Wall -fno-warn-unused-do-bind
+  exposed-modules:
     Database.TokyoDystopia
     Database.TokyoDystopia.Class
-    Database.TokyoDystopia.FFI
-    Database.TokyoDystopia.FFI.IDB
-    Database.TokyoDystopia.FFI.JDB
-    Database.TokyoDystopia.FFI.QDB
-    Database.TokyoDystopia.FFI.WDB
     Database.TokyoDystopia.JDB
     Database.TokyoDystopia.IDB
     Database.TokyoDystopia.QDB
     Database.TokyoDystopia.WDB
     Database.TokyoDystopia.Utils
     Database.TokyoDystopia.Types
-  Other-Modules:
+    Database.TokyoDystopia.FFI
+    Database.TokyoDystopia.FFI.IDB
+    Database.TokyoDystopia.FFI.JDB
+    Database.TokyoDystopia.FFI.QDB
+    Database.TokyoDystopia.FFI.WDB
+  other-modules:
     Database.TokyoDystopia.Internal
-  Extra-libraries:
+  extra-libraries:
     tokyodystopia
-  Build-depends:
+  build-depends:
     base >= 2.0 && < 5.0,
     bytestring >= 0.9.1.7,
     monads-fd >= 0.1.0.2,
+    time >= 1.1.4,
     tokyocabinet-haskell >= 0.0.5

@@ -14,7 +14,7 @@ import Database.TokyoDystopia
     , GetMode(..)
     , IDB
     , JDB
-    , QDB 
+    , QDB
     , WDB )
 import qualified Database.TokyoCabinet as TC
 import qualified Database.TokyoCabinet.List as TCL
@@ -34,7 +34,8 @@ main = do
            b <- test_write_idb
            c <- test_read_idb_2 1
            d <- test_search_idb "united"
-           return (a,b,c,d)
+           e <- test_mtime_idb
+           return (a,b,c,d,e)
   putStrLn "idb tests:" >> print idb
 
   -- QDB tests
@@ -68,10 +69,13 @@ main = do
 --
 ------------------------------------------------------------------------------
 
+idbPath :: FilePath
+idbPath = "test/idb/casket"
+
 test_read_idb :: TDM (Maybe ByteString)
 test_read_idb = do
   db <- TD.new :: TDM IDB
-  TD.open db "test/idb/casket" [OWRITER]
+  TD.open db idbPath [OWRITER]
   val <- TD.get db 1
   TD.close db >> TD.del db
   return val
@@ -79,7 +83,7 @@ test_read_idb = do
 test_write_idb :: TDM Bool
 test_write_idb = do
   db <- TD.new :: TDM IDB
-  TD.open db "test/idb/casket" [OCREAT, OWRITER]
+  TD.open db idbPath [OCREAT, OWRITER]
   res <- mapM (uncurry $ TD.put db)
        [ (1, "foo")
        , (2, "bar")
@@ -90,7 +94,7 @@ test_write_idb = do
 test_read_idb_2 :: Int64 -> TDM (Maybe ByteString)
 test_read_idb_2 key = do
   db <- TD.new :: TDM IDB
-  TD.open db "test/idb/casket" [OREADER]
+  TD.open db idbPath [OREADER]
   res <- TD.get db key
   TD.close db >> TD.del db
   return res
@@ -98,12 +102,18 @@ test_read_idb_2 key = do
 test_search_idb :: String -> TDM [(Int64, ByteString)]
 test_search_idb query = do
   db <- (TD.new :: TDM IDB)
-  TD.open db "test/idb/casket" [OREADER]
+  TD.open db idbPath [OREADER]
   ks <- TD.search db query [GMSUBSTR]
   res <- mapM (\k -> TD.get db k >>= \(Just v) -> return (k,v)) ks
   TD.close db >> TD.del db
   return res
 
+test_mtime_idb :: TDM String
+test_mtime_idb = do
+  db <- (TD.new :: TDM IDB)
+  TD.open db idbPath [OREADER]
+  t <- liftIO $ IDB.mtime db
+  return $ show t
 
 ------------------------------------------------------------------------------
 --
@@ -111,10 +121,13 @@ test_search_idb query = do
 --
 ------------------------------------------------------------------------------
 
+qdbPath :: FilePath
+qdbPath = "test/casket.tcq"
+
 test_write_qdb :: TDM Bool
 test_write_qdb = do
   db <- TD.new :: TDM QDB
-  TD.open db "test/casket.tcq" [OWRITER, OCREAT]
+  TD.open db qdbPath [OWRITER, OCREAT]
   res <- mapM (uncurry $ TD.put db)
          [(1, "hello"),
           (2, "haskell"),
@@ -127,7 +140,7 @@ test_write_qdb = do
 test_read_qdb :: TDM (Maybe ByteString)
 test_read_qdb = do
   db <- TD.new :: TDM QDB
-  TD.open db "test/casket.tcq" [OREADER]
+  TD.open db qdbPath [OREADER]
   res <- TD.get db 1
   TD.close db >> TD.del db
   return $ res
@@ -135,11 +148,24 @@ test_read_qdb = do
 test_search_qdb :: String -> TDM [Int64]
 test_search_qdb query = do
   db <- TD.new :: TDM QDB
-  TD.open db "test/casket.tcq" [OREADER]
+  TD.open db qdbPath [OREADER]
   res <- TD.search db query [GMSUBSTR]
   TD.close db >> TD.del db
   return res
 
+test_idset_qdb :: IO ()
+test_idset_qdb = do
+  set <- QDB.idsetnew 32
+  QDB.idsetmark set 3
+  print =<< QDB.idsetcheck set 3
+  print =<< QDB.idsetcheck set 4
+  QDB.idsetclear set
+  print =<< QDB.idsetcheck set 3
+  QDB.idsetdel set
+
+test_tn_qdb :: IO ()
+test_tn_qdb = do
+  undefined
 
 ------------------------------------------------------------------------------
 --
@@ -147,11 +173,14 @@ test_search_qdb query = do
 --
 ------------------------------------------------------------------------------
 
+jdbPath :: FilePath
+jdbPath = "test/laputa"
+
 test_write_jdb :: TDM Bool
 test_write_jdb = do
 
   db <- TD.new :: TDM JDB
-  TD.open db "test/laputa" [OCREAT, OWRITER]
+  TD.open db jdbPath [OCREAT, OWRITER]
 
   l1 <- liftIO (TCL.new :: IO (TCL.List ByteString))
   l2 <- liftIO (TCL.new :: IO (TCL.List ByteString))
@@ -164,7 +193,7 @@ test_write_jdb = do
   r1 <- TD.put db 1 l1
   r2 <- TD.put db 2 l2
   r3 <- TD.put db 3 l3
-  
+
   TD.close db >> TD.del db >> liftIO (mapM_ TCL.delete [l1,l2,l3])
 
   return $ and [r1, r2, r3]
@@ -173,17 +202,17 @@ test_write_jdb = do
 test_read_jdb :: TDM ByteString
 test_read_jdb = do
   db <- TD.new :: TDM JDB
-  TD.open db "test/laputa" [OREADER]
+  TD.open db jdbPath [OREADER]
   res <- TD.get db 2
   res' <- liftIO $ maybe (return B.empty) TCL.dump res
   TD.close db >> TD.del db
-  return res' 
+  return res'
 
 
 test_search_jdb :: String -> TDM [Int64]
 test_search_jdb q = do
   db <- TD.new :: TDM JDB
-  TD.open db "test/laputa" [OREADER]
+  TD.open db jdbPath [OREADER]
   res <- TD.search db q [GMSUBSTR]
   TD.close db >> TD.del db
   return res
@@ -195,31 +224,34 @@ test_search_jdb q = do
 --
 ------------------------------------------------------------------------------
 
+wdbPath :: FilePath
+wdbPath = "test/casket.tcw"
+
 test_write_wdb :: TDM Bool
 test_write_wdb = do
   db <- TD.new :: TDM WDB
-  TD.open db "test/casket.tcw" [OCREAT, OWRITER]
-  l1 <- liftIO $ TCL.new 
+  TD.open db wdbPath [OCREAT, OWRITER]
+  l1 <- liftIO $ TCL.new
   l2 <- liftIO $ TCL.new
   l3 <- liftIO $ TCL.new
   liftIO $ do
     mapM_ (TCL.push l1 . C8.pack) ["foo", "bar", "buzz"]
     mapM_ (TCL.push l2 . C8.pack) ["foo", "bar", "apple"]
-    mapM_ (TCL.push l3 . C8.pack) ["foo", "apple", "banana"] 
+    mapM_ (TCL.push l3 . C8.pack) ["foo", "apple", "banana"]
   r1 <- TD.put db 1 l1
   r2 <- TD.put db 2 l2
   r3 <- TD.put db 3 l3
   TD.close db
   TD.del db
   return $ and [r1, r2, r3]
-  
+
 
 -- | TD.get for WDB will always return empty ByteString.
 test_read_wdb :: TDM (ByteString)
 test_read_wdb = do
   db <- TD.new :: TDM WDB
-  TD.open db "test/casket.tcw" [OREADER]
-  res <- TD.get db 1 
+  TD.open db wdbPath [OREADER]
+  res <- TD.get db 1
   res' <- liftIO $ maybe (return B.empty) TCL.dump res
   TD.close db >> TD.del db
   return res'
@@ -228,7 +260,7 @@ test_read_wdb = do
 test_search_wdb :: String -> TDM [Int64]
 test_search_wdb q = do
   db <- TD.new :: TDM WDB
-  TD.open db "test/casket.tcw" [OREADER]
+  TD.open db wdbPath [OREADER]
   ks <- TD.search db q [GMSUBSTR]
   TD.close db >> TD.del db
   return ks

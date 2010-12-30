@@ -11,7 +11,10 @@
 --
 
 module Database.TokyoDystopia.WDB
-    ( WDB()
+    ( -- * Type
+      WDB()
+
+      -- * Basic functions
     , new
     , del
     , ecode
@@ -33,22 +36,35 @@ module Database.TokyoDystopia.WDB
     , tnum
     , fsiz
     , sync
+
+    -- * Advanced functions
+    , setdbgfd
+    , getdbgfd
+    , memsync
+    , cacheclear
+    , inode
+    , mtime
+    , opts
+    , setsynccb
+    , setaddcb
     ) where
 
-import Data.ByteString ( ByteString )
-import Data.Int ( Int64 )
-import Foreign ( Ptr, withForeignPtr )
+import Data.ByteString (ByteString)
+import Data.Int (Int64)
+import Data.Time (UTCTime)
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
+import Foreign (Ptr, withForeignPtr)
 import qualified Foreign as FG
 import qualified Data.ByteString.Char8 as C8
 import qualified Foreign.C.String as CS
 
-import Database.TokyoCabinet ( ECODE(..) )
-import Database.TokyoCabinet.List.C ( List(..) )
-import Database.TokyoCabinet.Storable ( Storable )
+import Database.TokyoCabinet (ECODE(..))
+import Database.TokyoCabinet.List.C (List(..))
+import Database.TokyoCabinet.Storable (Storable)
 import qualified Database.TokyoCabinet.Error as TCE
 import qualified Database.TokyoCabinet.Storable as TCS
 
-import Database.TokyoDystopia.Internal ( bitOr )
+import Database.TokyoDystopia.Internal (bitOr, toTuningOptions)
 import Database.TokyoDystopia.Types
     ( OpenMode(..)
     , TuningOption(..) )
@@ -100,13 +116,13 @@ out db key val = do
   FW.c_out (unWDB db) (TCS.toInt64 key) val'
 
 -- | Removes record with specifying delimiter.
-out2 :: (Storable k) 
+out2 :: (Storable k)
      => WDB         -- ^ WDB database
      -> k           -- ^ Key for the record
      -> ByteString  -- ^ Deleting values separated with delimeter
      -> ByteString  -- ^ The delimeter
      -> IO Bool
-out2 db k vs v = 
+out2 db k vs v =
   C8.useAsCString vs $ \vs' ->
     C8.useAsCString v $ \v' ->
       FW.c_out2 (unWDB db) (TCS.toInt64 k) vs' v'
@@ -166,9 +182,9 @@ sync = FW.c_sync . unWDB
 
 -- | Tune the database. Must be used before opening database.
 tune :: WDB -> Int64 -> [TuningOption] -> IO Bool
-tune db etnum opts = FW.c_tune (unWDB db) etnum opts'
+tune db etnum os = FW.c_tune (unWDB db) etnum os'
   where
-    opts' = fromIntegral . bitOr $ map (FW.unTuningOption . f) opts
+    os' = fromIntegral . bitOr $ map (FW.unTuningOption . f) os
     f TLARGE   = FW.toLarge
     f TDEFLATE = FW.toDeflate
     f TBZIP    = FW.toBzip
@@ -184,3 +200,53 @@ copy :: WDB -> FilePath -> IO Bool
 copy db file = do
   file' <- CS.newCString file
   FW.c_copy (unWDB db) file'
+
+--
+-- Advanced functions
+--
+
+-- | Set file descriptor for debugging output.
+setdbgfd :: WDB -> Int -> IO ()
+setdbgfd db fd = FW.c_setdbgfd (unWDB db) (fromIntegral fd)
+
+-- | Get file descriptor for debugging output.
+getdbgfd :: WDB -> IO Int
+getdbgfd = fmap fromIntegral . FW.c_dbgfd . unWDB
+
+-- | Synchronize updating contents on memory of an indexed database object
+memsync :: WDB -> Int -> IO Bool
+memsync db level = FW.c_memsync (unWDB db) (fromIntegral level)
+
+-- | Clear the cache.
+cacheclear :: WDB -> IO Bool
+cacheclear = FW.c_cacheclear . unWDB
+
+-- | Get the inode number of the database dictionary of an indexed database
+-- object.
+inode :: WDB -> IO Int64
+inode = FW.c_inode . unWDB
+
+-- | Get the modificatoin time of the database directory of an indexed database
+-- object.
+mtime :: WDB -> IO UTCTime
+mtime = fmap (posixSecondsToUTCTime . realToFrac) . FW.c_mtime . unWDB
+
+-- | Get the options of an indexed database object.
+opts :: WDB -> IO [TuningOption]
+opts = fmap toTuningOptions . FW.c_opts . unWDB
+
+-- | Set the callback function for sync progression.
+setsynccb :: WDB -> (Int -> Int -> String -> IO Bool) -> IO Bool
+setsynccb db cb = do
+  cb' <- FW.c_setsynccb_wrapper (\i1 i2 s -> do
+                                    s' <- CS.peekCString s
+                                    let i1' = fromIntegral i1
+                                        i2' = fromIntegral i2
+                                    cb i1' i2' s')
+  FW.c_setsynccb (unWDB db) cb'
+
+
+setaddcb :: WDB -> (String -> IO ()) -> IO ()
+setaddcb db cb = do
+  cb' <- FW.c_setaddcb_wrapper (\s -> CS.peekCString s >>= cb)
+  FW.c_setaddcb (unWDB db) cb'
