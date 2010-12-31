@@ -12,7 +12,9 @@
 --
 -- * <http://fallab.com/tokyodystopia/>
 --
--- Example for doing put and get to ByteString value with IDB:
+-- /Examples/:
+--
+-- Doing put and get of ByteString value with IDB:
 --
 -- > import qualified Data.ByteString.Char8 as C8
 -- > import qualified Database.TokyoDystopia as TD
@@ -28,7 +30,7 @@
 -- >     return result
 -- >   print foo
 --
--- Example for searching IDB database:
+-- Searching IDB database:
 --
 -- > import Control.Monad (zipWithM_)
 -- > import qualified Data.ByteString.Char8 as C8

@@ -12,7 +12,10 @@ stability:      experimental
 description:    Haskell binding for Tokyo Dystopia full text searching library.
 
 library
-  ghc-options: -O2 -Wall -fno-warn-unused-do-bind
+  ghc-options: 
+    -O2 -Wall -fno-warn-unused-do-bind
+  hs-source-dirs:
+    src
   exposed-modules:
     Database.TokyoDystopia
     Database.TokyoDystopia.Class
