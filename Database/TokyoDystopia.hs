@@ -8,18 +8,52 @@
 -- Portability : non-portable
 --
 -- Haskell binding for tokyodystopia full text search.
+-- For more information about tokyo dystopia, visit:
 --
-
+-- * <http://fallab.com/tokyodystopia/>
+--
+-- Example for doing put and get to ByteString value with IDB:
+--
+-- > import qualified Data.ByteString.Char8 as C8
+-- > import qualified Database.TokyoDystopia as TD
+-- >
+-- > main :: IO ()
+-- > main = do
+-- >   foo <- TD.runTDM $ do
+-- >     db <- TD.new :: TD.TDM TD.IDB
+-- >     TD.open db "casket" [TD.OCREAT, TD.OWRITER]
+-- >     TD.put db 1 (C8.pack "foo")
+-- >     result <- TD.get db 1
+-- >     TD.close db
+-- >     return result
+-- >   print foo
+--
+-- Example for searching IDB database:
+--
+-- > import Control.Monad (zipWithM_)
+-- > import qualified Data.ByteString.Char8 as C8
+-- > import qualified Database.TokyoDystopia as TD
+-- >
+-- > main :: IO ()
+-- > main = do
+-- >   vals <- C8.lines `fmap` C8.readFile "/etc/group"
+-- >   keys <- TD.runTDM $ do
+-- >     db <- TD.new :: TD.TDM TD.IDB
+-- >     TD.open db "casket" [TD.OCREAT, TD.OWRITER]
+-- >     zipWithM_ (TD.put db) [1..] vals
+-- >     result <- TD.search db "root" [TD.GMSUBSTR]
+-- >     TD.close db
+-- >     return result
+-- >   print keys
+--
 module Database.TokyoDystopia
-    (
-      IDB.IDB
+    ( IDB.IDB
     , QDB.QDB
     , JDB.JDB
     , WDB.WDB
     , module Database.TokyoDystopia.Class
     , module Database.TokyoDystopia.Types
     , module Database.TokyoDystopia.Utils
-
     ) where
 
 import Database.TokyoDystopia.Class
