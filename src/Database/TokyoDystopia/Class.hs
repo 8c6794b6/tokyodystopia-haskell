@@ -1,5 +1,4 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE PackageImports #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -20,7 +19,7 @@ module Database.TokyoDystopia.Class where
 
 import Data.ByteString ( ByteString )
 import Data.Int ( Int64 )
-import "monads-fd" Control.Monad.Trans( MonadIO )
+import Control.Monad.Trans( MonadIO )
 
 import Database.TokyoCabinet.List ( List )
 

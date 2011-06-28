@@ -1,5 +1,5 @@
 name:		tokyodystopia-haskell
-version:	0.0.2
+version:	0.0.3
 synopsis:       Haskell binding of Tokyo Dystopia.
 author:         8c6794b6
 maintainer:     8c6794b6@gmail.com
@@ -37,6 +37,6 @@ library
   build-depends:
     base >= 2.0 && < 5.0,
     bytestring >= 0.9.1.7,
-    monads-fd >= 0.1.0.2,
+    mtl >= 2.0.0,
     time >= 1.1.4,
     tokyocabinet-haskell >= 0.0.5

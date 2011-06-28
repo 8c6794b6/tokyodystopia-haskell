@@ -2,7 +2,7 @@
 module Main where
 
 import Control.Monad
-import "monads-fd" Control.Monad.Trans ( liftIO )
+import Control.Monad.Trans ( liftIO )
 import Data.Int ( Int64 )
 import Data.ByteString ( ByteString )
 import qualified Data.ByteString as B
