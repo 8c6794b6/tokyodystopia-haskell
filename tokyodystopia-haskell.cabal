@@ -7,15 +7,22 @@ cabal-version:  >= 1.6
 build-type:     Simple
 license:        BSD3
 license-file:   LICENSE
-category:       Data
+category:       Database
 stability:      experimental
-description:    Haskell binding for Tokyo Dystopia full text searching library.
+description:
+  Haskell binding for Tokyo Dystopia full text searching library.
+
+-- test-suite main-tests
+--   type:
+--     exitcode-stdio-1.0
+--   extra-libraries:
+--     tokyodystopia
+--   main-is:
+--     tests.hs
 
 library
-  ghc-options: 
+  ghc-options:
     -O2 -Wall -fno-warn-unused-do-bind
-  hs-source-dirs:
-    src
   exposed-modules:
     Database.TokyoDystopia
     Database.TokyoDystopia.Class
@@ -35,7 +42,7 @@ library
   extra-libraries:
     tokyodystopia
   build-depends:
-    base >= 2.0 && < 5.0,
+    base == 4.*,
     bytestring >= 0.9.1.7,
     mtl >= 2.0.0,
     time >= 1.1.4,

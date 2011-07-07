@@ -65,9 +65,7 @@ import qualified Database.TokyoCabinet.Error as TCE
 import qualified Database.TokyoCabinet.Storable as TCS
 
 import Database.TokyoDystopia.Internal (bitOr, toTuningOptions)
-import Database.TokyoDystopia.Types
-    ( OpenMode(..)
-    , TuningOption(..) )
+import Database.TokyoDystopia.Types (OpenMode(..), TuningOption(..))
 import qualified Database.TokyoDystopia.FFI.WDB as FW
 import qualified Database.TokyoDystopia.Internal as I
 

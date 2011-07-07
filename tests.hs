@@ -1,21 +1,31 @@
 {-# LANGUAGE PackageImports, OverloadedStrings #-}
+------------------------------------------------------------------------------
+-- |
+-- Module      : $Header$
+-- Copyright   : 8c6794b6 <8c6794b6@gmail.com>
+-- License     : BSD3
+-- Maintainer  : 8c6794b6
+-- Stability   : experimental
+-- Portability : non-portable
+--
+-- Main test
+--
 module Main where
 
 import Control.Monad
 import Control.Monad.Trans ( liftIO )
-import Data.Int ( Int64 )
-import Data.ByteString ( ByteString )
+import Data.Int (Int64)
+import Data.ByteString (ByteString)
+import System.Directory (createDirectoryIfMissing, getTemporaryDirectory)
+import System.Exit (exitFailure, exitSuccess)
+import System.FilePath ((</>))
+import Test.QuickCheck (Property, (==>))
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
+import qualified Test.QuickCheck as Q
+import qualified Test.QuickCheck.Monadic as QM
 
 import Database.TokyoDystopia
-    ( TDM
-    , OpenMode(..)
-    , GetMode(..)
-    , IDB
-    , JDB
-    , QDB
-    , WDB )
 import qualified Database.TokyoCabinet as TC
 import qualified Database.TokyoCabinet.List as TCL
 import qualified Database.TokyoDystopia as TD
@@ -23,45 +33,135 @@ import qualified Database.TokyoDystopia.IDB as IDB
 import qualified Database.TokyoDystopia.QDB as QDB
 import qualified Database.TokyoDystopia.JDB as JDB
 import qualified Database.TokyoDystopia.WDB as WDB
-
+import qualified Database.TokyoDystopia.Utils as U
 
 main :: IO ()
 main = do
+  -- results <- mapM (Q.quickCheckWithResult (Q.Args Nothing 1000 10000 100 True))
+  results <- mapM Q.quickCheckResult
+    [Q.label "idb" prop_idb
+    ,Q.label "qdb" prop_qdb
+    ,Q.label "jdb" prop_jdb
+    ,Q.label "wdb" prop_wdb]
+  if any (not . isSuccess) results then exitFailure else exitSuccess
 
-  -- IDB tests
-  idb <- TD.runTDM $ do
-           a <- test_read_idb
-           b <- test_write_idb
-           c <- test_read_idb_2 1
-           d <- test_search_idb "united"
-           e <- test_mtime_idb
-           return (a,b,c,d,e)
-  putStrLn "idb tests:" >> print idb
+prop_idb :: Int64 -> String -> Property
+prop_idb key val = QM.monadicIO $ do
+  QM.pre $ validKS key val
+  dbPath <- QM.run $ do
+    path <- (</> "casket") `fmap` getTemporaryDirectory
+    createDirectoryIfMissing True path
+    return path
+  (val',ids) <- QM.run $ U.withIDB dbPath [OCREAT,OWRITER,OREADER] $ \db -> do
+    IDB.put db key (C8.pack val)
+    val' <- IDB.get db key
+    ids <- IDB.search db val [GMSUBSTR]
+    return (val',ids)
+  QM.assert (maybe "" C8.unpack val' == val && not (null ids))
 
-  -- QDB tests
-  qdb <- TD.runTDM $ do
-           a <- test_write_qdb
-           b <- test_read_qdb
-           c <- test_search_qdb "a"
-           return (a, b, c)
-  putStrLn "qdb tests:" >> print qdb
+prop_qdb :: Int64 -> Property
+prop_qdb key = QM.monadicIO $ do
+  val <- QM.pick asciis
+  QM.pre $ validKS key val
+  dbPath <- QM.run $ (</> "casket.tcq") `fmap` getTemporaryDirectory
+  (res,ids) <- QM.run $ U.withQDB dbPath [OCREAT,OWRITER,OREADER] $ \db -> do
+    res <- QDB.put db key (C8.pack val)
+    ids <- QDB.search db val [GMSUBSTR]
+    return (res,ids)
+  QM.assert $ res && (not $ null ids)
 
-  -- JDB tests
-  jdb <- TD.runTDM $ do
-           a <- test_write_jdb
-           b <- test_read_jdb
-           c <- test_search_qdb "a"
-           return (a, b, c)
-  putStrLn "jdb tests:" >> print jdb
+prop_jdb :: Int -> Property
+prop_jdb key = QM.monadicIO $ do
+  vals <- QM.pick (Q.listOf1 asciis)
+  QM.pre $ key > 0 && not (null vals) && all (not . null) vals
+  dbPath <- QM.run $ do
+    path <- (</> "laputa") `fmap` getTemporaryDirectory
+    createDirectoryIfMissing True path
+    return path
+  l <- QM.run $ TCL.new >>= \l ->
+    mapM_ (TCL.push l) vals >> return l
+  (res,ids) <- QM.run $ U.withJDB dbPath [OCREAT,OWRITER,OREADER] $ \db -> do
+    JDB.put db key l
+    res <- TCL.dump =<< JDB.get db key
+    ids <- JDB.search2 db (head vals)
+    return (res,ids)
+  QM.assert $ C8.length res > 0 && length ids > 0
 
-  -- WDB tests
-  wdb <- TD.runTDM $ do
-          a <- test_write_wdb
-          b <- test_read_wdb
-          c <- test_search_wdb "foo"
-          return (a, b, c)
-  putStrLn "wdb tests:" >> print wdb
+prop_wdb :: Int64 -> Property
+prop_wdb key = QM.monadicIO $ do
+  vals <- QM.pick (Q.listOf1 asciis)
+  QM.pre $ key > 0
+  dbPath <- QM.run $ (</> "casket.tcw") `fmap` getTemporaryDirectory
+  l <- QM.run $ TCL.new >>= \l ->
+    mapM_ (TCL.push l . C8.pack) vals >> return l
+  (res,ids) <- QM.run $ U.withWDB dbPath [OCREAT,OWRITER,OREADER] $ \db -> do
+    res <- WDB.put db key l
+    ids <- WDB.search db (head vals)
+    return (res,ids)
+  QM.assert $ res && length ids > 0
 
+-- putThenGet :: TD.TDDB db val
+--            => db -> FilePath -> Int64 -> val -> TDM (Maybe val)
+-- putThenGet db dbPath key val = do
+--   TD.open db dbPath [OCREAT,OWRITER,OREADER]
+--   TD.put db key val
+--   val' <- TD.get db key
+--   TD.close db >> TD.del db
+--   return val'
+
+isSuccess :: Q.Result -> Bool
+isSuccess r = case r of Q.Success _ _ _ -> True; _ -> False
+
+validKS :: (Ord a, Num a) => a -> String -> Bool
+validKS k v =
+  not (null $ filter (\x -> x /= ' ' && x /= '\n') v) &&
+  (not $ ('\\' `elem` v || '\NUL' `elem` v)) &&
+  k > 1
+
+asciis :: Q.Gen String
+asciis = Q.listOf1 (Q.elements $ ['A'..'Z'] ++ ['a'..'z'])
+
+
+------------------------------------------------------------------------------
+------------------------------------------------------------------------------
+-- From here starts old codes. Not using quickcheck.
+--
+
+-- main :: IO ()
+-- main = do
+--   IDB tests
+--   idb <- TD.runTDM $ do
+--            a <- test_read_idb
+--            b <- test_write_idb
+--            c <- test_read_idb_2 1
+--            d <- test_search_idb "united"
+--            e <- test_mtime_idb
+--            return (a,b,c,d,e)
+--   putStrLn "idb tests:" >> print idb
+
+--   QDB tests
+--   qdb <- TD.runTDM $ do
+--            a <- test_write_qdb
+--            b <- test_read_qdb
+--            c <- test_search_qdb "a"
+--            return (a, b, c)
+--   putStrLn "qdb tests:" >> print qdb
+
+--   JDB tests
+--   jdb <- TD.runTDM $ do
+--            a <- test_write_jdb
+--            b <- test_read_jdb
+--            c <- test_search_qdb "a"
+--            return (a, b, c)
+--   putStrLn "jdb tests:" >> print jdb
+
+--   WDB tests
+--   wdb <- TD.runTDM $ do
+--           a <- test_write_wdb
+--           b <- test_read_wdb
+--           c <- test_search_wdb "foo"
+--           return (a, b, c)
+--   putStrLn "wdb tests:" >> print wdb
 
 ------------------------------------------------------------------------------
 --
@@ -245,7 +345,6 @@ test_write_wdb = do
   TD.del db
   return $ and [r1, r2, r3]
 
-
 -- | TD.get for WDB will always return empty ByteString.
 test_read_wdb :: TDM (ByteString)
 test_read_wdb = do
@@ -255,7 +354,6 @@ test_read_wdb = do
   res' <- liftIO $ maybe (return B.empty) TCL.dump res
   TD.close db >> TD.del db
   return res'
-
 
 test_search_wdb :: String -> TDM [Int64]
 test_search_wdb q = do
