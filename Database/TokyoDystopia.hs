@@ -10,7 +10,7 @@
 -- Haskell binding for tokyodystopia full text search.
 -- For more information about tokyo dystopia, visit:
 --
--- * <http://fallab.com/tokyodystopia/>
+-- * <http://fallabs.com/tokyodystopia/>
 --
 -- /Examples/:
 --
