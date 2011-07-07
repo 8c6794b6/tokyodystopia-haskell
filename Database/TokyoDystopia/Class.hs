@@ -47,39 +47,17 @@ newtype TDM a = TDM
 -- | Typeclass for types of database found in tokyo dystopia.
 --
 class TDDB db val | db -> val where
-
-    new :: TDM db
-    new = undefined
-
-    open :: db -> FilePath -> [OpenMode] -> TDM Bool
-    open = undefined
-
-    close :: db -> TDM Bool
-    close = undefined
-
-    get :: db -> Int64 -> TDM (Maybe val)
-    get = undefined
-
-    put :: db -> Int64 -> val -> TDM Bool
-    put = undefined
-
+    new    :: TDM db
+    open   :: db -> FilePath -> [OpenMode] -> TDM Bool
+    close  :: db -> TDM Bool
+    get    :: db -> Int64 -> TDM (Maybe val)
+    put    :: db -> Int64 -> val -> TDM Bool
     search :: db -> String -> [GetMode] -> TDM [Int64]
-    search = undefined
-
-    del :: db -> TDM ()
-    del = undefined
-
-    tune :: db -> Int64 -> Int64 -> Int64 -> [TuningOption] -> TDM Bool
-    tune = undefined
-
-    path :: db -> TDM FilePath
-    path = undefined
-
-    fsiz :: db -> TDM Int64
-    fsiz = undefined
-
-    sync :: db -> TDM Bool
-    sync = undefined
+    del    :: db -> TDM ()
+    tune   :: db -> Int64 -> Int64 -> Int64 -> [TuningOption] -> TDM Bool
+    path   :: db -> TDM FilePath
+    fsiz   :: db -> TDM Int64
+    sync   :: db -> TDM Bool
 
 
 ------------------------------------------------------------------------------
