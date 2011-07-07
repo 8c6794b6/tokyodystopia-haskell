@@ -37,7 +37,7 @@ import qualified Database.TokyoDystopia.JDB as JDB
 import qualified Database.TokyoDystopia.WDB as WDB
 
 -- | Run db action with TDDB.
-withTDDB :: (TDDB db val) => FilePath -> [OpenMode] -> (db -> TDM a) -> IO a
+withTDDB :: TDDB db => FilePath -> [OpenMode] -> (db -> TDM a) -> IO a
 withTDDB file modes func= TDDB.runTDM $ do
   db <- TDDB.new
   TDDB.open db file modes
