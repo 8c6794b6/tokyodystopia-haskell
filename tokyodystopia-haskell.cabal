@@ -3,7 +3,7 @@ version:	0.0.3
 synopsis:       Haskell binding of Tokyo Dystopia.
 author:         8c6794b6
 maintainer:     8c6794b6@gmail.com
-cabal-version:  >= 1.6
+cabal-version:  >= 1.8
 build-type:     Simple
 license:        BSD3
 license-file:   LICENSE
@@ -11,6 +11,10 @@ category:       Database
 stability:      experimental
 description:
   Haskell binding for Tokyo Dystopia full text searching library.
+
+source-repository head
+  type:     git
+  location: http://8c6794b6@github.com/8c6794b6/tokyodystopia-haskell
 
 -- test-suite main-tests
 --   type:
@@ -22,7 +26,7 @@ description:
 
 library
   ghc-options:
-    -O2 -Wall -fno-warn-unused-do-bind
+    -Wall -fno-warn-unused-do-bind
   exposed-modules:
     Database.TokyoDystopia
     Database.TokyoDystopia.Class
